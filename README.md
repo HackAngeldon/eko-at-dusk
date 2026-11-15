@@ -12,6 +12,18 @@ python -m http.server 8000
 
 Then open http://localhost:8000.
 
+## Single-file version
+
+`dist/eko-at-dusk.html` is the whole scene in one HTML file (about 230 KB, 72 KB gzipped). You can open it straight from disk, email it or host it anywhere. It still needs an internet connection, because three.js and the fonts load from CDNs.
+
+To rebuild it after changing anything in `src/` or `index.html`:
+
+```bash
+python tools/build_single.py
+```
+
+The script needs only Python 3. Each module is wrapped in its own scope, in the order the browser would load it, and comments and indentation are stripped. If Node.js is installed, the result is syntax-checked before it is written.
+
 ## Controls
 
 | Key | Action |
@@ -42,5 +54,6 @@ On a phone: left thumb walks, right thumb looks.
 | `src/cloth.js` | Real cloth simulation for the nearest skirts, wrappers, dresses and kaftans |
 | `src/crowds.js` | Where people are, and how they avoid each other, props and you |
 | `src/audio.js` | Synthesised street, horn, music, generator, wind, gull and wave sounds |
+| `tools/build_single.py` | Bundles everything into `dist/eko-at-dusk.html` |
 
 Shop names and brands are invented.
