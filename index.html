@@ -1,0 +1,138 @@
+<title>Eko at Dusk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=Bungee&family=Permanent+Marker&display=swap">
+<style>
+  /* Layout: full-bleed street canvas; a left-anchored "ticket" panel over the blurred scene. One look, dark dusk. */
+  :root {
+    color-scheme: dark;
+    --ink: #120d0a;
+    --panel: #1c1410e6;
+    --dust: #f3e6d0;
+    --dust-dim: #c9b79c;
+    --danfo: #f2b705;
+    --stripe: #111111;
+    --rust: #c0582c;
+    --line: #f3e6d02e;
+    --font-sign: "Bungee", "Arial Black", Impact, sans-serif;
+    --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --font-hand: "Permanent Marker", "Comic Sans MS", cursive;
+  }
+  html, body { height: 100%; }
+  body { margin: 0; overflow: hidden; background: var(--ink); color: var(--dust); font: 400 15px/1.5 var(--font-body); -webkit-user-select: none; user-select: none; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; transition: filter 0.8s ease, transform 0.8s ease; }
+  html:not([data-state="playing"]) #c { filter: blur(6px) brightness(0.62) saturate(1.1); transform: scale(1.04); }
+
+  #panel {
+    position: fixed; top: 0; bottom: 0; left: 0;
+    width: min(30rem, 100%); box-sizing: border-box;
+    display: flex; flex-direction: column; justify-content: center; gap: 1.4rem;
+    padding-block: max(2rem, env(safe-area-inset-top, 0px)) max(2rem, env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px), 2.5vw); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    transition: opacity 0.4s, visibility 0.4s;
+  }
+  html[data-state="playing"] #panel { opacity: 0; visibility: hidden; }
+  .ticket { background: var(--panel); border-radius: 4px; padding: 1.5rem 1.4rem 1.3rem; display: grid; gap: 1.1rem; box-shadow: 0 1.2rem 3rem #0009; }
+
+  /* The one loud element: a danfo's yellow side with its two black stripes. */
+  .livery { position: relative; background: var(--danfo); color: var(--stripe); padding: 0.9rem 1rem 1.25rem; margin: -1.5rem -1.4rem 0; border-radius: 4px 4px 0 0; overflow: hidden; }
+  .livery::before, .livery::after { content: ""; position: absolute; left: 0; right: 0; background: var(--stripe); }
+  .livery::before { bottom: 0.55rem; height: 0.32rem; }
+  .livery::after { bottom: 0.2rem; height: 0.18rem; }
+  h1 { margin: 0; font: 400 clamp(2.1rem, 8vw, 3.1rem)/0.95 var(--font-sign); letter-spacing: 0.01em; text-wrap: balance; }
+  .route { margin: 0.35rem 0 0; font: 800 0.72rem/1 var(--font-body); letter-spacing: 0.14em; text-transform: uppercase; }
+  .lede { margin: 0; color: var(--dust); max-width: 34ch; text-wrap: pretty; }
+
+  #load { display: grid; gap: 0.5rem; }
+  #track { height: 0.5rem; background: #ffffff14; border-radius: 1rem; overflow: hidden; }
+  #bar { display: block; height: 100%; transform: scaleX(0); transform-origin: 0 50%; transition: transform 0.25s;
+    background: repeating-linear-gradient(-45deg, var(--danfo) 0 10px, #d29b00 10px 20px); }
+  #status { margin: 0; font: 600 0.8rem/1.3 var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dust-dim); }
+  html[data-state="ready"] #load, html[data-state="paused"] #load { display: none; }
+  html[data-state="loading"] #go, html[data-state="error"] #go { display: none; }
+
+  #go { display: grid; gap: 1rem; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  #start { padding: 0.85rem 1.2rem; border: 0; border-radius: 4px; background: var(--danfo); color: var(--stripe);
+    font: 400 1.05rem/1 var(--font-sign); letter-spacing: 0.02em; box-shadow: inset 0 -0.22rem #0000004d; transition: transform 0.12s, filter 0.12s; }
+  #start:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  #start:active { transform: translateY(1px); }
+  :focus-visible { outline: 3px solid var(--dust); outline-offset: 3px; }
+
+  .row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .label { font: 800 0.7rem/1 var(--font-body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dust-dim); min-width: 4.5rem; }
+  #quality { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  #quality button { border: 0; background: none; padding: 0.45rem 0.9rem; font: 600 0.8rem/1 var(--font-body); color: var(--dust-dim); }
+  #quality button[aria-pressed="true"] { background: var(--dust); color: var(--ink); }
+
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 0.45rem 0.8rem; margin: 0; font-size: 0.85rem; color: var(--dust-dim); }
+  .keys dt { display: flex; gap: 0.25rem; justify-content: flex-end; }
+  .keys dd { margin: 0; }
+  kbd { display: inline-block; min-width: 1.1rem; padding: 0.12rem 0.35rem; border-radius: 3px; background: var(--dust); color: var(--ink); font: 800 0.72rem/1.3 var(--font-body); text-align: center; box-shadow: inset 0 -2px #0005; }
+  .touch-hint { display: none; margin: 0; font-size: 0.85rem; color: var(--dust-dim); }
+  @media (pointer: coarse) { .keys { display: none; } .touch-hint { display: block; } }
+  .note { margin: 0; font-size: 0.78rem; color: var(--dust-dim); }
+  .note b { font-family: var(--font-hand); font-weight: 400; color: var(--rust); letter-spacing: 0.02em; }
+
+  #pause { position: fixed; top: calc(0.8rem + env(safe-area-inset-top, 0px)); right: calc(0.8rem + env(safe-area-inset-right, 0px));
+    display: none; width: 2.6rem; height: 2.6rem; border: 0; border-radius: 4px; background: #120d0acc; color: var(--dust); font-size: 1.3rem; }
+  html[data-state="playing"] #pause { display: block; }
+  @media (pointer: fine) { html[data-state="playing"] #pause { display: none; } }
+
+  #call { position: fixed; left: 0; top: 0; max-width: 16rem; padding: 0.45rem 0.7rem; border-radius: 4px; background: var(--danfo); color: var(--stripe);
+    font: 400 0.85rem/1.15 var(--font-sign); pointer-events: none; box-shadow: 0 0.4rem 1rem #0008; }
+  #call::after { content: ""; position: absolute; left: 50%; bottom: -0.45rem; border: 0.25rem solid transparent; border-top: 0.25rem solid var(--danfo); transform: translateX(-50%); }
+  html:not([data-state="playing"]) #call { display: none; }
+  #toast { position: fixed; left: 50%; bottom: calc(1.6rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 0.55rem 0.9rem; border-radius: 4px;
+    background: #120d0ae0; font: 600 0.85rem/1.2 var(--font-body); pointer-events: none; white-space: nowrap; }
+  #stats { position: fixed; left: calc(0.8rem + env(safe-area-inset-left, 0px)); top: calc(0.7rem + env(safe-area-inset-top, 0px)); margin: 0;
+    font: 600 0.75rem/1.3 ui-monospace, Consolas, monospace; color: var(--dust); text-shadow: 0 1px 3px #000; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { #c, #panel, #bar { transition: none; } }
+</style>
+
+<canvas id="c" aria-label="A Lagos street at dusk, seen in first person"></canvas>
+
+<div id="panel">
+  <div class="ticket">
+    <div class="livery">
+      <h1>Eko at Dusk</h1>
+      <p class="route">Ojuelegba &middot; one street &middot; go-slow</p>
+    </div>
+    <p class="lede">Walk one Lagos street as the sun goes down. Battered danfos, koropes and BRT buses crawl through the go-slow under tangled wires and hand-painted signs. Follow the sandy path between the buildings to the beach.</p>
+
+    <div id="load" role="status" aria-live="polite">
+      <div id="track"><i id="bar"></i></div>
+      <p id="status">Loading…</p>
+    </div>
+
+    <div id="go">
+      <button id="start" type="button">Start walking</button>
+      <div class="row"><span class="label">Detail</span>
+        <span id="quality"><button type="button" data-q="low" aria-pressed="false">Low</button><button type="button" data-q="high" aria-pressed="false">High</button></span>
+      </div>
+      <dl class="keys">
+        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk (mouse to look)</dd>
+        <dt><kbd>Shift</kbd></dt><dd>Run</dd>
+        <dt><kbd>1</kbd>&ndash;<kbd>7</kbd></dt><dd>Kerb, bridge (both ways), bus stop, median, beach path, shoreline</dd>
+        <dt><kbd>M</kbd> <kbd>H</kbd></dt><dd>Sound on/off &middot; frame stats</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Pause</dd>
+      </dl>
+      <p class="touch-hint">Left thumb: walk (push far to run). Right thumb: look around.</p>
+    </div>
+    <p class="note">A prototype. Every building, bus and sound is generated in code; shop names and brands are invented. <b>Eko o ni baje!</b></p>
+  </div>
+</div>
+
+<button id="pause" type="button" aria-label="Pause">&#8801;</button>
+<div id="toast" hidden></div>
+<pre id="stats" hidden></pre>
+
+<script>document.documentElement.dataset.state = 'loading';</script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="src/main.js"></script>
